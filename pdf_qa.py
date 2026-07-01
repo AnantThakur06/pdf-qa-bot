@@ -36,15 +36,22 @@ while True:
     question_embedding = model.encode(question)
 
     # Step 5: find the closest chunk (RETRIEVAL)
-    scores = util.cos_sim(question_embedding, chunk_embeddings)
-    best_index = scores.argmax()
-    best_chunk = chunks[best_index]
+    # scores = util.cos_sim(question_embedding, chunk_embeddings)
+    # best_index = scores.argmax()
+    # best_chunk = chunks[best_index]
+    # Step 5: find the TOP 3 closest chunks (RETRIEVAL)
+    scores = util.cos_sim(question_embedding, chunk_embeddings)[0]
+    top_indices = scores.topk(3).indices
+
+    best_chunks = ""
+    for index in top_indices:
+        best_chunks += f"{chunks[index]}\n\n"
 
     # Step 6: feed the chunk to the LLM (GENERATION)
     response = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
-            {"role": "system", "content": f"Answer using ONLY this text. If the answer isn't here, say you don't know. Text: {best_chunk}"},
+            {"role": "system", "content": f"Answer using ONLY this text. If the answer isn't here, say you don't know. Text: {best_chunks}"},
             {"role": "user", "content": question}
         ]
     )
