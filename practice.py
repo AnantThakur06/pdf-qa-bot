@@ -1,23 +1,17 @@
-text = "abcdefghijklmnopqrstuvwxyz"
+import time
+import torch
+from sentence_transformers import util
 
-chunk_size = 5
-chunks = []
+# Warm-up call (throwaway) so the first real measurement is fair
+_ = util.cos_sim(torch.rand(1, 384), torch.rand(10, 384))
 
-print(f"Original text : {text}")
-print(f"Length        : {len(text)}")
-print("-" * 50)
+for num_chunks in [1000, 50000, 200000, 1000000]:
+    fake_chunks = torch.rand(num_chunks, 384)
+    fake_question = torch.rand(1, 384)
 
-for i in range(0, len(text), chunk_size):
-    print(f"Current i = {i}")
+    start = time.time()
+    scores = util.cos_sim(fake_question, fake_chunks)[0]
+    best = scores.argmax()
+    end = time.time()
 
-    chunk = text[i:i + chunk_size]
-
-    print(f"text[{i}:{i + chunk_size}] -> '{chunk}'")
-
-    chunks.append(chunk)
-
-    print(f"Chunks so far: {chunks}")
-    print("-" * 50)
-
-print("\nFinal Result")
-print(chunks)
+    print(f"{num_chunks:>8} chunks  ->  {(end - start) * 1000:.2f} ms")
